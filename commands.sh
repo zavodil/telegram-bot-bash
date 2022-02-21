@@ -1,11 +1,11 @@
 #!/bin/bash
 # file: commands.sh
 
-#  _____                               _______    _ _      _ 
+#  _____                               _______    _ _      _
 # (____ \                      _      (_______)  | (_)_   | |
 #  _   \ \ ___     ____   ___ | |_     _____   _ | |_| |_ | |
 # | |   | / _ \   |  _ \ / _ \|  _)   |  ___) / || | |  _)|_|
-# | |__/ / |_| |  | | | | |_| | |__   | |____( (_| | | |__ _ 
+# | |__/ / |_| |  | | | | |_| | |__   | |____( (_| | | |__ _
 # |_____/ \___/   |_| |_|\___/ \___)  |_______)____|_|\___)_|
 #
 # this file *MUST* not edited! place your config in the file "mycommands.conf"
@@ -37,7 +37,7 @@ It currently can send, receive and forward messages, custom keyboards, photos, a
 #-----------------------------
 # this file *MUST* not edited!
 # copy "mycommands.sh.dist" to "mycommands.sh" and change the strings there
-bashbot_help='
+bashbot_help_1='
 *Available commands*:
 *• /start*: _Start bot and get this message_.
 *• /help*: _Get this message_.
@@ -52,6 +52,10 @@ Additional commands from mycommands.dist ...
 *• /stop_notify*: _Stop notify background job_.
 Written by Drew (@topkecleon) and KayM (@gnadelwartz).
 Get the code on [GitHub](http://github.com/topkecleon/telegram-bot-bash)
+'
+
+bashbot_help='
+Probably nothing
 '
 
 # load modules on startup and always on on debug
@@ -94,14 +98,14 @@ if [ -z "$1" ] || [[ "$1" == *"debug"* ]];then
     #################
     # regular command
     else
-	
+
 	###################
 	# if is bashbot is group admin it get commands sent to other bots
 	# set MEONLY=1 to ignore commands for other bots
 	if [[ "${MEONLY}" != "0" && "${MESSAGE}" == "/"*"@"* ]]; then
 		# here we have a command with @xyz_bot added, check if it's our bot
 		[ "${MESSAGE%%@*}" != "${MESSAGE%%@${ME}}" ] && return
-	fi 
+	fi
 
 	###################
 	# user defined commands must placed in mycommands
@@ -116,6 +120,17 @@ if [ -z "$1" ] || [[ "$1" == *"debug"* ]];then
 		# copy "mycommands.sh.dist" to "mycommands.sh" and change the values and add your commands there
 		#
 		# GLOBAL commands start here, edit messages only
+
+        '/invite'*)
+            USER_ID="${MESSAGE//\/invite /}"
+            if [ "${USER[ID]}" = "224639615" ] || [ "${USER[ID]}" = "85770891" ] ; then
+                RESPONSE="$(export $(cat ../.env | xargs) && PGPASSWORD=${POSTGRES_PASSWORD} psql -h ${POSTGRES_SERVICE_HOST} -p ${POSTGRES_SERVICE_PORT} -U ${POSTGRES_USER} ${POSTGRES_DB} -v account_id="'${USER_ID}'" -v creator="'bot'" -f insert.sql)"
+                send_normal_message "${CHAT[ID]}" "Inviting ${USER_ID}: ${RESPONSE}"
+            else
+                send_normal_message "${CHAT[ID]}" "You shall not pass"
+            fi
+			;;
+
 		'/info'*)
 			send_markdown_message "${CHAT[ID]}" "${bashbot_info}"
 			;;
@@ -131,7 +146,7 @@ if [ -z "$1" ] || [[ "$1" == *"debug"* ]];then
 				send_normal_message "${CHAT[ID]}" "You are not allowed to start Bot."
 			fi
 			;;
-			
+
 		'/help'*)
 			send_markdown_message "${CHAT[ID]}" "${bashbot_help}"
 			;;
@@ -141,18 +156,18 @@ if [ -z "$1" ] || [[ "$1" == *"debug"* ]];then
    				leave_chat "${CHAT[ID]}"
 			fi
      			;;
-     			
+
      		'/kickme'*)
      			kick_chat_member "${CHAT[ID]}" "${USER[ID]}"
      			unban_chat_member "${CHAT[ID]}" "${USER[ID]}"
      			;;
-     			
+
 		'/'*)	# discard all unknown commands
 			: ;;
-		*)	# forward message to interactive chats 
+		*)	# forward message to interactive chats
 			_exec_if_function send_interactive "${CHAT[ID]}" "${MESSAGE}"
 			;;
 	     esac
 	fi
-    fi 
+    fi
 fi
